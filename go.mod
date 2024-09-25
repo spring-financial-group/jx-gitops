@@ -4,6 +4,7 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/MichaelMure/go-term-markdown v0.1.4
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
+	github.com/chartmuseum/helm-push v0.10.4
 	github.com/cpuguy83/go-md2man v1.0.10
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
@@ -346,6 +347,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.30.0 // indirect
 	k8s.io/cli-runtime v0.30.2 // indirect
+	k8s.io/helm v2.17.0+incompatible // indirect
 	k8s.io/klog/v2 v2.130.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20240521193020-835d969ad83a // indirect
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0 // indirect

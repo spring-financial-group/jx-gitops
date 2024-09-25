@@ -2,12 +2,13 @@ package mirror
 
 import (
 	"fmt"
+	"github.com/jenkins-x-plugins/jx-gitops/pkg/ghpages"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 
-	"github.com/jenkins-x-plugins/jx-gitops/pkg/ghpages"
+	"github.com/chartmuseum/helm-push/pkg/chartmuseum"
 	"github.com/jenkins-x-plugins/jx-gitops/pkg/rootcmd"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cmdrunner"
 	"github.com/jenkins-x/jx-helpers/v3/pkg/cobras/helper"
@@ -25,7 +26,6 @@ import (
 	"github.com/jenkins-x/jx-logging/v3/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"helm.sh/helm/v3/pkg/repo"
 )
 
 var (
@@ -47,12 +47,13 @@ type Options struct {
 	Dir              string
 	RepositoriesFile string
 	Branch           string
-	GitURL           string
+	RepoURL          string
 	CommitMessage    string
 	Excludes         []string
 	NoPush           bool
 	GitClient        gitclient.Interface
 	CommandRunner    cmdrunner.CommandRunner
+	RepoType         string // "Git" or "ChartMuseum"
 }
 
 // NewCmdMirror creates a command object for the command
@@ -71,9 +72,10 @@ func NewCmdMirror() (*cobra.Command, *Options) {
 	}
 	cmd.Flags().StringVarP(&o.Dir, "dir", "d", ".", "the directory which contains the charts/repositories.yml file")
 	cmd.Flags().StringVarP(&o.Branch, "branch", "b", "gh-pages", "the git branch to clone the repository")
-	cmd.Flags().StringVarP(&o.GitURL, "url", "u", "", "the git URL of the repository to mirror the charts into")
+	cmd.Flags().StringVarP(&o.RepoURL, "url", "u", "", "the git URL of the repository to mirror the charts into")
 	cmd.Flags().StringVarP(&o.CommitMessage, "message", "m", "chore: upgrade mirrored charts", "the commit message")
 	cmd.Flags().StringArrayVarP(&o.Excludes, "exclude", "x", []string{"jenkins-x", "jx3"}, "the helm repositories to exclude from mirroring")
+	cmd.Flags().StringVarP(&o.RepoType, "repo-type", "t", "Git", "the type of repository (Git or ChartMuseum)")
 
 	o.Factory.AddFlags(cmd)
 	return cmd, o
@@ -81,7 +83,7 @@ func NewCmdMirror() (*cobra.Command, *Options) {
 
 // Validate the arguments
 func (o *Options) Validate() error {
-	if o.GitURL == "" {
+	if o.RepoURL == "" {
 		return options.MissingOption("url")
 	}
 	if o.CommandRunner == nil {
@@ -93,9 +95,9 @@ func (o *Options) Validate() error {
 
 	if o.GitToken == "" {
 		if o.GitServerURL == "" {
-			gitInfo, err := giturl.ParseGitURL(o.GitURL)
+			gitInfo, err := giturl.ParseGitURL(o.RepoURL)
 			if err != nil {
-				return errors.Wrapf(err, "failed to parse git URL %s", o.GitURL)
+				return errors.Wrapf(err, "failed to parse git URL %s", o.RepoURL)
 			}
 			o.GitServerURL = gitInfo.HostURL()
 		}
@@ -107,6 +109,10 @@ func (o *Options) Validate() error {
 		if o.GitToken == "" {
 			return options.MissingOption("git-token")
 		}
+	}
+	// TODO: Validate the ChartMuseum Types with a JX Helper
+	if o.RepoType != "Git" && o.RepoType != "ChartMuseum" {
+		return errors.Errorf("unknown repository type %s, expected 'Git' or 'ChartMuseum'", o.RepoType)
 	}
 	return nil
 }
@@ -128,14 +134,33 @@ func (o *Options) Run() error {
 		return errors.Errorf("could not find charts/repositories.yml file in dir %s", o.Dir)
 	}
 
-	gitDir, err := ghpages.CloneGitHubPagesToDir(o.GitClient, o.GitURL, o.Branch, o.GitUsername, o.GitToken)
+	// No push, return early
+	if o.NoPush {
+		log.Logger().Infof("NoPush is set, skipping push operation")
+		return nil
+	}
+
+	// Call the appropriate helper based on RepoType
+	switch o.RepoType {
+	case "Git":
+		return o.pushChartToGit(prefixes)
+	case "ChartMuseum":
+		return o.pushChartToMuseum(prefixes)
+	default:
+		return errors.Errorf("unknown repository type %s, expected 'Git' or 'ChartMuseum'", o.RepoType)
+	}
+}
+
+// pushChartToGit push chart to git repository
+func (o *Options) pushChartToGit(prefixes *versionstream.RepositoryPrefixes) error {
+	gitDir, err := ghpages.CloneGitHubPagesToDir(o.GitClient, o.RepoURL, o.Branch, o.GitUsername, o.GitToken)
 	if err != nil {
-		return errors.Wrapf(err, "failed to clone the github pages repo %s branch %s", o.GitURL, o.Branch)
+		return errors.Wrapf(err, "failed to clone the GitHub pages repo %s branch %s", o.RepoURL, o.Branch)
 	}
 	if gitDir == "" {
-		return errors.Errorf("no github pages clone dir")
+		return errors.Errorf("no GitHub pages clone dir")
 	}
-	log.Logger().Infof("cloned github pages repository to %s", info(gitDir))
+	log.Logger().Infof("cloned GitHub pages repository to %s", info(gitDir))
 
 	for _, repo := range prefixes.Repositories {
 		name := repo.Prefix
@@ -162,9 +187,7 @@ func (o *Options) Run() error {
 		log.Logger().Infof("no changes")
 		return nil
 	}
-	if o.NoPush {
-		return nil
-	}
+
 	err = gitclient.Pull(o.GitClient, gitDir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to push changes")
@@ -197,6 +220,82 @@ func (o *Options) MirrorRepository(dir string, urls []string) error {
 			return errors.Wrapf(err, "failed to download index for %s", dir)
 		}
 	}
+	return nil
+}
+
+// pushChartToMuseum uses the chartmuseum.Client to upload charts to a ChartMuseum instance
+func (o *Options) pushChartToMuseum(prefixes *versionstream.RepositoryPrefixes) error {
+	// Create a ChartMuseum client
+	client, err := o.createChartMuseumClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create ChartMuseum client")
+	}
+
+	for _, repo := range prefixes.Repositories {
+		name := repo.Prefix
+		if stringhelpers.StringArrayIndex(o.Excludes, name) >= 0 {
+			continue
+		}
+		outDir := filepath.Join(o.Dir, name)
+
+		// Check if directory exists and contains Helm charts
+		files, err := os.ReadDir(outDir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to read directory %s", outDir)
+		}
+
+		// Iterate through each file (expecting `.tgz` Helm chart files)
+		for _, file := range files {
+			if filepath.Ext(file.Name()) == ".tgz" {
+				chartPath := filepath.Join(outDir, file.Name())
+
+				// Use the ChartMuseum client to upload the chart
+				err := o.uploadChartToMuseum(client, chartPath)
+				if err != nil {
+					log.Logger().Warnf("failed to upload chart %s to ChartMuseum", chartPath)
+					continue
+				}
+
+				log.Logger().Infof("successfully uploaded chart %s to ChartMuseum", chartPath)
+			}
+		}
+	}
+	return nil
+}
+
+// createChartMuseumClient initializes and returns a chartmuseum.Client
+func (o *Options) createChartMuseumClient() (*chartmuseum.Client, error) {
+	opts := []chartmuseum.Option{
+		chartmuseum.URL(o.RepoURL), // RepoURL now includes the ChartMuseum URL
+	}
+
+	// Optionally, add username/password or token for authentication if provided
+	if o.GitUsername != "" && o.GitToken != "" {
+		opts = append(opts, chartmuseum.Username(o.GitUsername), chartmuseum.Password(o.GitToken))
+	}
+
+	// Create the ChartMuseum client
+	client, err := chartmuseum.NewClient(opts...)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create ChartMuseum client")
+	}
+
+	return client, nil
+}
+
+// uploadChartToMuseum uploads a chart file to the ChartMuseum instance using chartmuseum.Client
+func (o *Options) uploadChartToMuseum(client *chartmuseum.Client, chartPath string) error {
+	// Upload the chart using the ChartMuseum client
+	resp, err := client.UploadChartPackage(chartPath, false) // false means "do not force upload"
+	if err != nil {
+		return errors.Wrapf(err, "failed to upload chart %s", chartPath)
+	}
+
+	// Check if the response is successful (e.g., status 201 Created)
+	if resp.StatusCode != http.StatusCreated {
+		return errors.Errorf("failed to upload chart %s, received status %s", chartPath, resp.Status)
+	}
+
 	return nil
 }
 
