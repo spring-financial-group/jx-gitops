@@ -66,7 +66,7 @@ func FindRequirements(g gitclient.Interface, jxClient jxc.Interface, ns, dir, ow
 }
 
 // GetSettings mergers and returns the settings from .jx/gitops/source-config.yaml in the cluster repo and .jx/settings.yaml in the current directory
-func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, repo string) (*jxcore.Settings, string, error) {
+func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, repo string, partial, shallow bool, sparseCheckoutPatterns ...string) (*jxcore.Settings, string, error) {
 	settings, err := requirements.LoadSettings(dir, true)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to load settings")
@@ -95,7 +95,10 @@ func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, 
 			return nil, "", errors.New("failed to find a dev environment source url on development environment resource")
 		}
 	}
-	clusterDir, err := requirements.CloneClusterRepo(g, gitURL)
+	if partial {
+		clusterDir, err := requirements.CloneClusterRepo(g, gitURL, partial, shallow, sparseCheckoutPatterns...)
+	}
+	clusterDir, err := requirements.CloneClusterRepo(g, gitURL, false, false, "")
 	if err != nil {
 		return nil, "", err
 	}
