@@ -3,6 +3,7 @@ package variables
 import (
 	"context"
 	"fmt"
+	"github.com/go-git/go-git/v5"
 	"os"
 	"path/filepath"
 	"sort"
@@ -62,6 +63,8 @@ type Options struct {
 	BuildID            string
 	GitCommitUsername  string
 	GitCommitUserEmail string
+	GitCloneType	   string
+	GitSparePatterns   []string
 	GitBranch          string
 	DashboardURL       string
 	Commit             bool
@@ -97,7 +100,15 @@ func NewCmdVariables() (*cobra.Command, *Options) {
 		Long:    cmdLong,
 		Example: fmt.Sprintf(cmdExample, rootcmd.BinaryName),
 		Run: func(_ *cobra.Command, _ []string) {
-			err := o.Run()
+			if o.GitCloneType != "full" && o.GitCloneType != "partial" && o.GitCloneType != "shallow" {
+				helper.CheckErr(fmt.Errorf("invalid value for git-clone-type: %s. Must be one of: full, partial, shallow", o.GitCloneType))
+			}
+
+			// Ensure GitSpareCheckOutPatterns is only used when git-clone-type is partial or shallow
+			if o.GitCloneType == "full" && len(o.GitSparePatterns) > 0 {
+				helper.CheckErr(fmt.Errorf("git-spare-checkout-patterns can only be used with git-clone-type 'partial' or 'shallow'"))
+			}
+,			err := o.Run()
 			helper.CheckErr(err)
 		},
 	}
@@ -108,6 +119,8 @@ func NewCmdVariables() (*cobra.Command, *Options) {
 	cmd.Flags().StringVarP(&o.RepositoryURL, "repo-url", "u", "", "the URL to release to")
 	cmd.Flags().StringVarP(&o.GitCommitUsername, "git-user-name", "", "", "the user name to git commit")
 	cmd.Flags().StringVarP(&o.GitCommitUserEmail, "git-user-email", "", "", "the user email to git commit")
+	cmd.Flags().StringVarP(&o.GitCloneType, "git-clone-type", "", "full", "the type of git clone to perform (full, partial, shallow)")
+	cmd.Flags().StringSliceVar(&o.GitSparePatterns, "git-spare-checkout-patterns", nil, "the patterns of files to checkout for partial/shallow clones")
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "the namespace to look for the dev Environment. Defaults to the current namespace")
 	cmd.Flags().StringVarP(&o.BuildNumber, "build-number", "", "", "the build number to use. If not specified defaults to $BUILD_NUMBER")
 	cmd.Flags().StringVarP(&o.ConfigMapName, "configmap", "", "jenkins-x-docker-registry", "the ConfigMap used to load environment variables")
@@ -142,7 +155,7 @@ func (o *Options) Validate() error {
 		o.GitClient = cli.NewCLIClient("", o.CommandRunner)
 	}
 	if o.Requirements == nil {
-		o.Requirements, err = variablefinders.FindRequirements(o.GitClient, o.JXClient, o.Namespace, o.Dir, o.Owner, o.Repository)
+		o.Requirements, err = variablefinders.FindRequirements(o.GitClient, o.JXClient, o.Namespace, o.Dir, o.Owner, o.Repository, o.GitCloneType, o.GitSpareCheckOutPatterns)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load requirements")
 		}
