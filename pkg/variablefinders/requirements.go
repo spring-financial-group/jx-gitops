@@ -27,9 +27,38 @@ func FindRequirements(g gitclient.Interface, jxClient jxc.Interface, ns, dir, ow
 		req = &requirementsConfig.Spec
 	}
 
-	// Merge settings as before...
-	// (remaining logic omitted for brevity)
+	ss := &settings.Spec
+	if ss.Destination != nil {
+		err = mergo.Merge(&req.Cluster.DestinationConfig, ss.Destination, mergo.WithOverride)
+		if err != nil {
+			return nil, errors.Wrap(err, "error merging requirements.spec.cluster Destination from settings")
+		}
+	}
 
+	// merge the environments now
+	if ss.IgnoreDevEnvironments {
+		req.Environments = ss.PromoteEnvironments
+	} else {
+		for i := range ss.PromoteEnvironments {
+			env := &ss.PromoteEnvironments[i]
+
+			found := false
+			key := env.Key
+			for j := range req.Environments {
+				sharedEnv := &req.Environments[j]
+				if key == sharedEnv.Key {
+					found = true
+					err = mergo.Merge(sharedEnv, env, mergo.WithOverride)
+					if err != nil {
+						return nil, errors.Wrapf(err, "error merging requirements.environment for %s,", key)
+					}
+				}
+			}
+			if !found {
+				req.Environments = append(req.Environments, *env)
+			}
+		}
+	}
 	return req, nil
 }
 
