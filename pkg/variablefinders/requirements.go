@@ -91,8 +91,14 @@ func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, 
 			return nil, "", errors.New("failed to find a dev environment source url on development environment resource")
 		}
 	}
-
-	clusterDir, err := requirements.CloneClusterRepo(g, gitURL, cloneType, sparseCheckoutPatterns)
+	var clusterDir string
+	if cloneType == "shallow" || cloneType == "sparse" {
+		clusterDir, err = requirements.CloneClusterRepoSparse(g, gitURL, cloneType, sparseCheckoutPatterns)
+	} else if cloneType == "full" {
+		clusterDir, err = requirements.CloneClusterRepo(g, gitURL)
+	} else {
+		return nil, "", errors.Errorf("unknown cloneType %s", cloneType)
+	}
 	if err != nil {
 		return nil, "", err
 	}
