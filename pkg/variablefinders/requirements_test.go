@@ -35,6 +35,7 @@ func TestFindRequirements(t *testing.T) {
 	owner := "myorg"
 	repo := "somerepo"
 
+	// Test cases for different cloning settings (full, sparse, shallow) and file patterns
 	testCasesCloning := []struct {
 		cloneType      string
 		sparsePatterns []string
@@ -103,18 +104,17 @@ func TestFindRequirements(t *testing.T) {
 						}
 						devGitPath := filepath.Join(dir, "dev-env")
 						destDir := command.Dir
+						// Destination directory appended as the final arg
 						if len(command.Args) > 2 {
 							destDir = command.Args[len(command.Args)-1]
 						}
 
 						if cloneCase.cloneType == "sparse" || cloneCase.cloneType == "shallow" {
-							// Simulate sparse/shallow cloning
 							err := files.CopyDirOverwrite(devGitPath, destDir)
 							if err != nil {
 								return "", errors.Wrapf(err, "failed to sparse/shallow clone %s to %s", devGitPath, command.Dir)
 							}
 						} else {
-							// Simulate full cloning
 							err := files.CopyDirOverwrite(devGitPath, destDir)
 							if err != nil {
 								return "", errors.Wrapf(err, "failed to full clone %s to %s", devGitPath, command.Dir)
@@ -128,13 +128,10 @@ func TestFindRequirements(t *testing.T) {
 
 			g := cli.NewCLIClient("git", runner.Run)
 
-			// Pass the sparse patterns based on the cloneCase
 			sparsePatterns := cloneCase.sparsePatterns
 
-			// Test the FindRequirements with different clone types
 			requirements, err := variablefinders.FindRequirements(g, jxClient, ns, dir, owner, repo, cloneCase.cloneType, sparsePatterns...)
 
-			// Assert error expectations
 			if tc.expectError {
 				require.Error(t, err, "expected error for %s with clone type %s", name, cloneCase.cloneType)
 				t.Logf("got expected error %s for %s with clone type %s\n", err.Error(), name, cloneCase.cloneType)
