@@ -35,6 +35,9 @@ func TestFindRequirements(t *testing.T) {
 	owner := "myorg"
 	repo := "somerepo"
 
+	cloneType := "full"
+	sparseCheckoutPatterns := ""
+
 	testCases := []struct {
 		path        string
 		expectError bool
@@ -85,7 +88,7 @@ func TestFindRequirements(t *testing.T) {
 		}
 
 		g := cli.NewCLIClient("git", runner.Run)
-		requirements, err := variablefinders.FindRequirements(g, jxClient, ns, dir, owner, repo)
+		requirements, err := variablefinders.FindRequirements(g, jxClient, ns, dir, owner, repo, cloneType, sparseCheckoutPatterns)
 
 		if tc.expectError {
 			require.Error(t, err, "expected error for %s", name)

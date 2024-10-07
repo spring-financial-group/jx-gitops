@@ -12,8 +12,8 @@ import (
 )
 
 // FindRequirements finds the requirements from the dev Environment CRD
-func FindRequirements(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, repo, cloneType string, sparseCheckoutPatterns []string) (*jxcore.RequirementsConfig, error) {
-	settings, clusterDir, err := GetSettings(g, jxClient, ns, dir, owner, repo, cloneType, sparseCheckoutPatterns)
+func FindRequirements(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, repo, cloneType string, sparseCheckoutPatterns ...string) (*jxcore.RequirementsConfig, error) {
+	settings, clusterDir, err := GetSettings(g, jxClient, ns, dir, owner, repo, cloneType, sparseCheckoutPatterns...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get settings")
 	}
@@ -63,7 +63,7 @@ func FindRequirements(g gitclient.Interface, jxClient jxc.Interface, ns, dir, ow
 }
 
 // GetSettings mergers and returns the settings from .jx/gitops/source-config.yaml in the cluster repo and .jx/settings.yaml in the current directory
-func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, repo, cloneType string, sparseCheckoutPatterns []string) (*jxcore.Settings, string, error) {
+func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, repo, cloneType string, sparseCheckoutPatterns ...string) (*jxcore.Settings, string, error) {
 	settings, err := requirements.LoadSettings(dir, true)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to load settings")
@@ -93,8 +93,8 @@ func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, 
 	}
 	var clusterDir string
 	if cloneType == "shallow" || cloneType == "sparse" {
-		clusterDir, err = requirements.CloneClusterRepoSparse(g, gitURL, cloneType, sparseCheckoutPatterns)
-	} else if cloneType == "full" {
+		clusterDir, err = requirements.CloneClusterRepoSparse(g, gitURL, cloneType, sparseCheckoutPatterns...)
+	} else if cloneType == "full" || cloneType == "" {
 		clusterDir, err = requirements.CloneClusterRepo(g, gitURL)
 	} else {
 		return nil, "", errors.Errorf("unknown cloneType %s", cloneType)
@@ -103,7 +103,7 @@ func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, 
 		return nil, "", err
 	}
 
-	// Handle merging settings as before
+	// lets see if we have organisation settings
 	srcConfig, err := sourceconfigs.LoadSourceConfig(clusterDir, true)
 	if err != nil {
 		return nil, clusterDir, errors.Wrapf(err, "failed to load source configs")
