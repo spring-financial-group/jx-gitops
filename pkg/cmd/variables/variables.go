@@ -110,8 +110,6 @@ func NewCmdVariables() (*cobra.Command, *Options) {
 	cmd.Flags().StringVarP(&o.RepositoryURL, "repo-url", "u", "", "the URL to release to")
 	cmd.Flags().StringVarP(&o.GitCommitUsername, "git-user-name", "", "", "the user name to git commit")
 	cmd.Flags().StringVarP(&o.GitCommitUserEmail, "git-user-email", "", "", "the user email to git commit")
-	cmd.Flags().StringVarP(&o.GitCloneType, "git-clone-type", "", "full", "the type of git clone to perform (full, partial, shallow)")
-	cmd.Flags().StringSliceVar(&o.GitSparsePatterns, "git-spare-checkout-patterns", nil, "the patterns of files to checkout for partial/shallow clones")
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "the namespace to look for the dev Environment. Defaults to the current namespace")
 	cmd.Flags().StringVarP(&o.BuildNumber, "build-number", "", "", "the build number to use. If not specified defaults to $BUILD_NUMBER")
 	cmd.Flags().StringVarP(&o.ConfigMapName, "configmap", "", "jenkins-x-docker-registry", "the ConfigMap used to load environment variables")
@@ -146,7 +144,7 @@ func (o *Options) Validate() error {
 		o.GitClient = cli.NewCLIClient("", o.CommandRunner)
 	}
 	if o.Requirements == nil {
-		o.Requirements, err = variablefinders.FindRequirements(o.GitClient, o.JXClient, o.Namespace, o.Dir, o.Owner, o.Repository, o.GitCloneType, o.GitSparsePatterns...)
+		o.Requirements, err = variablefinders.FindRequirements(o.GitClient, o.JXClient, o.Namespace, o.Dir, o.Owner, o.Repository)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load requirements")
 		}
