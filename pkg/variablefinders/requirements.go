@@ -15,7 +15,6 @@ import (
 func FindRequirements(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, repo string) (*jxcore.RequirementsConfig, error) {
 	// now lets merge the local requirements with the dev environment so that we can locally override things
 	// while inheriting common stuff
-
 	settings, clusterDir, err := GetSettings(g, jxClient, ns, dir, owner, repo)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get settings")
@@ -72,11 +71,11 @@ func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, 
 		return nil, "", errors.Wrapf(err, "failed to load settings")
 	}
 	if settings == nil {
-		// lets use an empty settings file
 		settings = &jxcore.Settings{}
 	}
 	gitURL := ""
 	if settings != nil {
+		// lets use an empty settings file
 		gitURL = settings.Spec.GitURL
 	}
 	if gitURL == "" {
@@ -95,7 +94,7 @@ func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, 
 			return nil, "", errors.New("failed to find a dev environment source url on development environment resource")
 		}
 	}
-	clusterDir, err := requirements.CloneClusterRepo(g, gitURL)
+	clusterDir, err := requirements.PartialCloneClusterRepo(g, gitURL, true, sourceconfigs.SourceConfigFile)
 	if err != nil {
 		return nil, "", err
 	}
