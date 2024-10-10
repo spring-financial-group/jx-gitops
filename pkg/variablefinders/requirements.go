@@ -13,6 +13,8 @@ import (
 
 // FindRequirements finds the requirements from the dev Environment CRD
 func FindRequirements(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, repo string) (*jxcore.RequirementsConfig, error) {
+	// now lets merge the local requirements with the dev environment so that we can locally override things
+	// while inheriting common stuff
 	settings, clusterDir, err := GetSettings(g, jxClient, ns, dir, owner, repo)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get settings")
@@ -73,6 +75,7 @@ func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, 
 	}
 	gitURL := ""
 	if settings != nil {
+		// lets use an empty settings file
 		gitURL = settings.Spec.GitURL
 	}
 	if gitURL == "" {
