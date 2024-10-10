@@ -91,6 +91,8 @@ func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, 
 			return nil, "", errors.New("failed to find a dev environment source url on development environment resource")
 		}
 	}
+	// Note: attempt to sparsely clone the cluster repo to get the source-config.yaml file
+	// If sparse clone is not supported, we will fall back to a shallow clone
 	clusterDir, err := requirements.PartialCloneClusterRepo(g, gitURL, true, ".jx/gitops/source-config.yaml")
 	if err != nil {
 		return nil, "", err
