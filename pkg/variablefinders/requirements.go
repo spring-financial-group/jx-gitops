@@ -91,7 +91,7 @@ func GetSettings(g gitclient.Interface, jxClient jxc.Interface, ns, dir, owner, 
 			return nil, "", errors.New("failed to find a dev environment source url on development environment resource")
 		}
 	}
-	clusterDir, err := requirements.CloneClusterRepoShallow(g, gitURL)
+	clusterDir, err := requirements.ShallowCheckoutClusterRepo(g, gitURL)
 	if err != nil {
 		return nil, "", err
 	}
