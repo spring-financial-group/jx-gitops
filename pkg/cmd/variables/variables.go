@@ -62,8 +62,6 @@ type Options struct {
 	BuildID            string
 	GitCommitUsername  string
 	GitCommitUserEmail string
-	GitCloneType       string
-	GitSparsePatterns  []string
 	GitBranch          string
 	DashboardURL       string
 	Commit             bool
