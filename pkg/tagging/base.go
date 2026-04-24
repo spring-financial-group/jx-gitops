@@ -40,6 +40,11 @@ type Options struct {
 	Overwrite bool
 }
 
+type kvPair struct {
+	key   *yaml.Node
+	value *yaml.Node
+}
+
 // NewCmdUpdateTag creates a command object for the command
 func NewCmdUpdateTag(tagVerb, tagType string) (*cobra.Command, *Options) {
 	o := &Options{}
@@ -107,10 +112,46 @@ func (o *Options) UpdateTagInYamlFiles(tagType string, tags []string) error {
 				modified = true
 			}
 		}
+
+		if sortTagContent(tagNode) {
+			modified = true
+		}
 		return modified, nil
 	}
 
 	return kyamls.ModifyFiles(o.Dir, modifyFn, o.Filter)
+}
+
+func sortTagContent(tagNode *yaml.RNode) bool {
+	content := tagNode.YNode().Content
+	n := len(content) / 2
+	if n < 2 {
+		return false
+	}
+
+	alreadySorted := true
+	for i := 0; i < n-1; i++ {
+		if content[i*2].Value > content[(i+1)*2].Value {
+			alreadySorted = false
+			break
+		}
+	}
+	if alreadySorted {
+		return false
+	}
+
+	pairs := make([]kvPair, n)
+	for i := 0; i < n; i++ {
+		pairs[i] = kvPair{content[i*2], content[i*2+1]}
+	}
+	sort.SliceStable(pairs, func(i, j int) bool {
+		return pairs[i].key.Value < pairs[j].key.Value
+	})
+	for i, pair := range pairs {
+		content[i*2] = pair.key
+		content[i*2+1] = pair.value
+	}
+	return true
 }
 
 func getTagNode(node *yaml.RNode, path, tagType string, o *Options) (*yaml.RNode, error) {
