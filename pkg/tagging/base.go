@@ -147,7 +147,7 @@ func sortTagContent(tagNode *yaml.RNode) bool {
 	}
 
 	sort.SliceStable(pairs, byKey)
-	// write sorted pairs back into the original content slice
+	// update in-place so the yaml node reflects the new order
 	for i, pair := range pairs {
 		content[i*2] = pair.key
 		content[i*2+1] = pair.value
