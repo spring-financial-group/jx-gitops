@@ -132,26 +132,21 @@ func sortTagContent(tagNode *yaml.RNode) bool {
 		return false
 	}
 
-	// return early if already in order, no allocation needed
-	alreadySorted := true
-	for i := 0; i < n-1; i++ {
-		if content[i*2].Value > content[(i+1)*2].Value {
-			alreadySorted = false
-			break
-		}
-	}
-	if alreadySorted {
-		return false
-	}
-
 	// pair up keys and values before sorting so they move together
 	pairs := make([]kvPair, n)
 	for i := 0; i < n; i++ {
 		pairs[i] = kvPair{content[i*2], content[i*2+1]}
 	}
-	sort.SliceStable(pairs, func(i, j int) bool {
-		return pairs[i].key.Value < pairs[j].key.Value
-	})
+
+	// alphabetical comparison used by both the check and the sort
+	byKey := func(i, j int) bool { return pairs[i].key.Value < pairs[j].key.Value }
+
+	// return early if already in order
+	if sort.SliceIsSorted(pairs, byKey) {
+		return false
+	}
+
+	sort.SliceStable(pairs, byKey)
 	// write sorted pairs back into the original content slice
 	for i, pair := range pairs {
 		content[i*2] = pair.key
