@@ -122,13 +122,17 @@ func (o *Options) UpdateTagInYamlFiles(tagType string, tags []string) error {
 	return kyamls.ModifyFiles(o.Dir, modifyFn, o.Filter)
 }
 
+// ensures consistent label order across files to prevent spurious diffs
 func sortTagContent(tagNode *yaml.RNode) bool {
 	content := tagNode.YNode().Content
+	// each label occupies 2 slots (key + value)
 	n := len(content) / 2
+	// nothing to sort with 1 or fewer labels
 	if n < 2 {
 		return false
 	}
 
+	// return early if already in order, no allocation needed
 	alreadySorted := true
 	for i := 0; i < n-1; i++ {
 		if content[i*2].Value > content[(i+1)*2].Value {
@@ -140,6 +144,7 @@ func sortTagContent(tagNode *yaml.RNode) bool {
 		return false
 	}
 
+	// pair up keys and values before sorting so they move together
 	pairs := make([]kvPair, n)
 	for i := 0; i < n; i++ {
 		pairs[i] = kvPair{content[i*2], content[i*2+1]}
@@ -147,6 +152,7 @@ func sortTagContent(tagNode *yaml.RNode) bool {
 	sort.SliceStable(pairs, func(i, j int) bool {
 		return pairs[i].key.Value < pairs[j].key.Value
 	})
+	// write sorted pairs back into the original content slice
 	for i, pair := range pairs {
 		content[i*2] = pair.key
 		content[i*2+1] = pair.value
