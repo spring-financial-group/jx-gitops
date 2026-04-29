@@ -300,6 +300,11 @@ type Merger struct {
 	// Override the default method of merge. Valid options are squash, rebase, and merge.
 	MergeType *string `json:"merge_method,omitempty"`
 
+	// MergeCommitTemplate defines a template for the merge commit title and body.
+	// Template fields available: .Number, .Title, .Body, .Author.Login, .Repository.Name,
+	// .Repository.NameWithOwner, .Repository.Owner.Login, .HeadRefName, .BaseRef.Name
+	MergeCommitTemplate *MergeCommitTemplate `json:"merge_commit_template,omitempty"`
+
 	// ContextOptions defines the default merge options. If not set it will infer
 	// the required and optional contexts from the jobs configured and use the Git Provider
 	// combined status; otherwise it may apply the branch protection setting or let user
@@ -341,6 +346,14 @@ type ContextPolicy struct {
 	OptionalContexts          *ReplaceableSliceOfStrings `json:"optional-contexts,omitempty"`
 	// Infer required and optional jobs from Branch Protection configuration
 	FromBranchProtection *bool `json:"from-branch-protection,omitempty"`
+}
+
+// MergeCommitTemplate holds templates to use for merge commits.
+type MergeCommitTemplate struct {
+	// Title is a Go template for the merge commit title.
+	Title string `json:"title,omitempty"`
+	// Body is a Go template for the merge commit body.
+	Body string `json:"body,omitempty"`
 }
 
 // Welcome welcome plugin config

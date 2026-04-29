@@ -39,6 +39,10 @@ func CompleteScheduler() *schedulerapi.SchedulerSpec {
 			MaxGoroutines:      pointerToRandomNumber(),
 			StatusUpdatePeriod: pointerToRandomDuration(),
 			SyncPeriod:         pointerToRandomDuration(),
+			MergeCommitTemplate: &schedulerapi.MergeCommitTemplate{
+				Title: "{{.Title}} ({{.Repository.NameWithOwner}}#{{.Number}})",
+				Body:  "{{.Body}}",
+			},
 		},
 		Presubmits: &schedulerapi.Presubmits{
 			Items: []*job.Presubmit{

@@ -1,0 +1,42 @@
+trigger:
+  trusted_org: roadrunner-corp
+approve:
+  lgtm_acts_as_approve: true
+  ignore_review_state: false
+schedulerAgent:
+  agent: prow
+merger:
+  blocker_label: hold
+  max_goroutines: 5
+postsubmits:
+  entries:
+    - name: release
+      context: ""
+      branches:
+        - master
+      agent: tekton
+
+presubmits:
+  entries:
+    - name: integration
+      agent: tekton
+      always_run: true
+      context: integration
+      rerun_command: /test this
+      trigger: (?m)^/test( all| this),?(\s+|$)
+
+queries:
+  - labels:
+      entries:
+        - approved
+    missingLabels:
+      entries:
+        - do-not-merge
+        - do-not-merge/hold
+        - do-not-merge/work-in-progress
+        - needs-ok-to-test
+        - needs-rebase
+plugins:
+  entries:
+    - approve
+    - trigger

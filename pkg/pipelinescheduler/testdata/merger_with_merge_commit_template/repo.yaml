@@ -1,0 +1,5 @@
+merger:
+  merge_method: squash
+  merge_commit_template:
+    title: "{{.Title}} ({{.Repository.NameWithOwner}}#{{.Number}})"
+    body: "{{.Body}}"

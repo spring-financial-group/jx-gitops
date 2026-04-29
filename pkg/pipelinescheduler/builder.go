@@ -150,6 +150,9 @@ func applyToMerger(parent, child *schedulerapi.Merger) {
 	if child.MergeType == nil {
 		child.MergeType = parent.MergeType
 	}
+	if child.MergeCommitTemplate == nil {
+		child.MergeCommitTemplate = parent.MergeCommitTemplate
+	}
 	if child.MaxGoroutines == nil {
 		child.MaxGoroutines = parent.MaxGoroutines
 	}

@@ -73,3 +73,14 @@ func TestBuildWithEmptyMerger(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, parent.Merger, merged.Merger)
 }
+
+func TestBuildWithMergeCommitTemplateInheritance(t *testing.T) {
+	t.Parallel()
+	child := testhelpers.CompleteScheduler()
+	child.Merger.MergeCommitTemplate = nil
+	parent := testhelpers.CompleteScheduler()
+	merged, err := pipelinescheduler.Build([]*schedulerapi.SchedulerSpec{parent, child})
+	assert.NoError(t, err)
+	assert.Equal(t, parent.Merger.MergeCommitTemplate, merged.Merger.MergeCommitTemplate)
+	assert.Equal(t, child.Merger.SquashLabel, merged.Merger.SquashLabel)
+}

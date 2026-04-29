@@ -131,6 +131,19 @@ func TestMergerWithMergeMethod(t *testing.T) {
 		})
 }
 
+func TestMergerWithMergeCommitTemplate(t *testing.T) {
+	wd, err := os.Getwd()
+	assert.NoError(t, err)
+	testhelpers.BuildAndValidateProwConfig(t, filepath.Join(wd, "testdata", "merger_with_merge_commit_template"), "config.yaml",
+		"plugins.yaml", []testhelpers.SchedulerFile{
+			{
+				Filenames: []string{"parent.yaml", "repo.yaml"},
+				Org:       "acme",
+				Repo:      "dummy",
+			},
+		})
+}
+
 func TestOnlyWithParent(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(t, err)

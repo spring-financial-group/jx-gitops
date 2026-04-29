@@ -538,6 +538,15 @@ func buildMerger(answer *keeper.Config, merger *schedulerapi.Merger, org, repo s
 		}
 		answer.MergeType[fmt.Sprintf("%s/%s", org, repo)] = keeper.PullRequestMergeType(*merger.MergeType)
 	}
+	if merger.MergeCommitTemplate != nil {
+		if answer.MergeTemplate == nil {
+			answer.MergeTemplate = make(map[string]keeper.MergeCommitTemplate)
+		}
+		answer.MergeTemplate[fmt.Sprintf("%s/%s", org, repo)] = keeper.MergeCommitTemplate{
+			TitleTemplate: merger.MergeCommitTemplate.Title,
+			BodyTemplate:  merger.MergeCommitTemplate.Body,
+		}
+	}
 	if merger.ContextPolicy != nil {
 		buildContextPolicy(&answer.ContextOptions.ContextPolicy, merger.ContextPolicy)
 	}

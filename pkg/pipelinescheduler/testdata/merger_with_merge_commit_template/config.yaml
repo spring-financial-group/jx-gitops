@@ -1,0 +1,37 @@
+postsubmits:
+  acme/dummy:
+    - agent: tekton
+      branches:
+        - master
+      context: ""
+      name: release
+presubmits:
+  acme/dummy:
+    - agent: tekton
+      always_run: true
+      context: integration
+      name: integration
+      rerun_command: /test this
+      trigger: (?m)^/test( all| this),?(\s+|$)
+push_gateway:
+  serve_metrics: true
+tide:
+  merge_method:
+    acme/dummy: squash
+  merge_commit_template:
+    acme/dummy:
+      title: "{{.Title}} ({{.Repository.NameWithOwner}}#{{.Number}})"
+      body: "{{.Body}}"
+  blocker_label: hold
+  max_goroutines: 5
+  queries:
+    - labels:
+        - approved
+      missingLabels:
+        - do-not-merge
+        - do-not-merge/hold
+        - do-not-merge/work-in-progress
+        - needs-ok-to-test
+        - needs-rebase
+      repos:
+        - acme/dummy

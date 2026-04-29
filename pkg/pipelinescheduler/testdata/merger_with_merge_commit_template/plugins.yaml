@@ -1,0 +1,13 @@
+approve:
+  - ignore_review_state: false
+    lgtm_acts_as_approve: true
+    repos:
+      - acme/dummy
+plugins:
+  acme/dummy:
+    - approve
+    - trigger
+triggers:
+  - repos:
+      - acme/dummy
+    trusted_org: roadrunner-corp
