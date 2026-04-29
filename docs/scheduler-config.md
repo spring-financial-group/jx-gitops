@@ -567,7 +567,7 @@ namespace provided, or the default if it is not set.</p>
 <code>map</code></br>
 <em>
 <a href="#scheduler.jenkins-x.io/v1alpha1.ConfigMapSpec">
-map[string]./pkg/apis/scheduler/v1alpha1.ConfigMapSpec
+map[string]ConfigMapSpec
 </a>
 </em>
 </td>
@@ -846,6 +846,47 @@ which eliminates the need to re-lgtm minor fixes/updates.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="scheduler.jenkins-x.io/v1alpha1.MergeCommitTemplate">MergeCommitTemplate
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#scheduler.jenkins-x.io/v1alpha1.Merger">Merger</a>)
+</p>
+<p>
+<p>MergeCommitTemplate holds templates to use for merge commits.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>title</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Title is a Go template for the merge commit title.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>body</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Body is a Go template for the merge commit body.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="scheduler.jenkins-x.io/v1alpha1.Merger">Merger
 </h3>
 <p>
@@ -979,6 +1020,21 @@ string
 </td>
 <td>
 <p>Override the default method of merge. Valid options are squash, rebase, and merge.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>merge_commit_template</code></br>
+<em>
+<a href="#scheduler.jenkins-x.io/v1alpha1.MergeCommitTemplate">
+MergeCommitTemplate
+</a>
+</em>
+</td>
+<td>
+<p>MergeCommitTemplate defines a template for the merge commit title and body.
+Template fields available: .Number, .Title, .Body, .Author.Login, .Repository.Name,
+.Repository.NameWithOwner, .Repository.Owner.Login, .HeadRefName, .BaseRef.Name</p>
 </td>
 </tr>
 <tr>
@@ -1170,7 +1226,7 @@ bool
 <code>entries</code></br>
 <em>
 <a href="#scheduler.jenkins-x.io/v1alpha1.ProtectionPolicy">
-map[string]*./pkg/apis/scheduler/v1alpha1.ProtectionPolicy
+map[string]ProtectionPolicy
 </a>
 </em>
 </td>
@@ -1388,7 +1444,7 @@ bool
 <code>Items</code></br>
 <em>
 <a href="#scheduler.jenkins-x.io/v1alpha1.ContextPolicy">
-map[string]*./pkg/apis/scheduler/v1alpha1.ContextPolicy
+map[string]ContextPolicy
 </a>
 </em>
 </td>
@@ -2096,5 +2152,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>060775df</code>.
+on git commit <code>1e7e7641</code>.
 </em></p>
